@@ -1,3 +1,5 @@
+#include <Adafruit_NeoPixel.h>
+
 /**
  * Analog input pin on Arduino board connected to voltage divider taking battery voltage.
  */
@@ -32,6 +34,10 @@
 
 #define PIN_BUTTON 2
 
+#define PIN_NEOPIXELS 7
+
+#define NO_OF_NEOPIXELS 10
+
 #define HYSTERIS 3 // Percentage hysteris
 #define LOGGING true
 #define WAIT_STATE_COUNT 500
@@ -56,6 +62,8 @@ int s_pending_state;
 int s_counter;
 int s_init;
 
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NO_OF_NEOPIXELS, PIN_NEOPIXELS, NEO_GRB + NEO_KHZ800);
+
 void setup() {
   // initialize serial communications at 9600 bps:
   Serial.begin(9600);
@@ -64,6 +72,10 @@ void setup() {
   digitalWrite(PIN_RELAY_PUMP, LOW);
   pinMode(PIN_RELAY_VALVE, OUTPUT);
   digitalWrite(PIN_RELAY_VALVE, LOW);
+
+  strip.begin();
+  strip.show(); // Initialize all pixels to 'off'
+
 }
 
 /**
@@ -185,6 +197,8 @@ void state_act() {
       logEnd();
     }
   }
+
+  setColor(waterPercentage);
   
   s_counter = s_counter - 1;
   if (LOGGING) {
@@ -247,6 +261,16 @@ void nextState() {
   }
   s_init = true;
   s_state = s_pending_state;
+}
+
+void setColor(int percentage) {
+  int red = map(percentage, 0, 100, 255, 0);
+  int green = map(percentage, 0, 100, 0, 255);
+  uint32_t color = strip.Color(red, green, 0);
+  for(uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, color);
+  }
+  strip.show();
 }
 
 int convert12VBatterySensorToVoltage(int analogValue) {
